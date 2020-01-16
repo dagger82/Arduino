@@ -13,8 +13,8 @@
 #include <ESP8266HTTPClient.h>
 
 #include <WiFiClientSecureBearSSL.h>
-// Fingerprint for demo URL, expires on June 2, 2019, needs to be updated well before this date
-const uint8_t fingerprint[20] = {0x5A, 0xCF, 0xFE, 0xF0, 0xF1, 0xA6, 0xF4, 0x5F, 0xD2, 0x11, 0x11, 0xC6, 0x1D, 0x2F, 0x0E, 0xBC, 0x39, 0x8D, 0x50, 0xE0};
+// Fingerprint for demo URL, expires on June 2, 2021, needs to be updated well before this date
+const uint8_t fingerprint[20] = {0x40, 0xaf, 0x00, 0x6b, 0xec, 0x90, 0x22, 0x41, 0x8e, 0xa3, 0xad, 0xfa, 0x1a, 0xe8, 0x25, 0x41, 0x1d, 0x1a, 0x54, 0xb3};
 
 ESP8266WiFiMulti WiFiMulti;
 
@@ -41,7 +41,7 @@ void loop() {
   // wait for WiFi connection
   if ((WiFiMulti.run() == WL_CONNECTED)) {
 
-    BearSSL::WiFiClientSecure *client = new BearSSL::WiFiClientSecure;
+    std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
 
     client->setFingerprint(fingerprint);
 
@@ -49,7 +49,6 @@ void loop() {
 
     Serial.print("[HTTPS] begin...\n");
     if (https.begin(*client, "https://jigsaw.w3.org/HTTP/connection.html")) {  // HTTPS
-
 
       Serial.print("[HTTPS] GET...\n");
       // start connection and send HTTP header
@@ -73,9 +72,8 @@ void loop() {
     } else {
       Serial.printf("[HTTPS] Unable to connect\n");
     }
-
-    delete client;
   }
 
+  Serial.println("Wait 10s before next round...");
   delay(10000);
 }

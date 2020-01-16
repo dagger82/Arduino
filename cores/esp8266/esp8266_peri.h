@@ -22,6 +22,7 @@
 #define ESP8266_PERI_H_INCLUDED
 
 #include "c_types.h"
+#include "esp8266_undocumented.h"
 
 #define ESP8266_REG(addr) *((volatile uint32_t *)(0x60000000+(addr)))
 #define ESP8266_DREG(addr) *((volatile uint32_t *)(0x3FF00000+(addr)))
@@ -101,8 +102,8 @@
 #define GPF14  ESP8266_REG(0x80C)
 #define GPF15  ESP8266_REG(0x810)
 
-extern uint8_t esp8266_gpioToFn[16];
-#define GPF(p) ESP8266_REG(0x800 + esp8266_gpioToFn[(p & 0xF)])
+extern volatile uint32_t* const esp8266_gpioToFn[16];
+#define GPF(p) (*esp8266_gpioToFn[(p & 0xF)])
 
 //GPIO (0-15) PIN Function Bits
 #define GPFSOE 0 //Sleep OE

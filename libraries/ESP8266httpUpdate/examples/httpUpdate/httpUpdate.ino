@@ -15,6 +15,11 @@
 
 #define USE_SERIAL Serial
 
+#ifndef APSSID
+#define APSSID "APSSID"
+#define APPSK  "APPSK"
+#endif
+
 ESP8266WiFiMulti WiFiMulti;
 
 void setup() {
@@ -33,10 +38,27 @@ void setup() {
   }
 
   WiFi.mode(WIFI_STA);
-  WiFiMulti.addAP("SSID", "PASSWORD");
+  WiFiMulti.addAP(APSSID, APPSK);
 
 
 }
+
+void update_started() {
+  USE_SERIAL.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished() {
+  USE_SERIAL.println("CALLBACK:  HTTP update process finished");
+}
+
+void update_progress(int cur, int total) {
+  USE_SERIAL.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+}
+
+void update_error(int err) {
+  USE_SERIAL.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+}
+
 
 void loop() {
   // wait for WiFi connection
@@ -51,6 +73,12 @@ void loop() {
     // on much longer than it will be off. Other pins than LED_BUILTIN may be used. The second
     // value is used to put the LED on. If the LED is on with HIGH, that value should be passed
     ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
+
+    // Add optional callback notifiers
+    ESPhttpUpdate.onStart(update_started);
+    ESPhttpUpdate.onEnd(update_finished);
+    ESPhttpUpdate.onProgress(update_progress);
+    ESPhttpUpdate.onError(update_error);
 
     t_httpUpdate_return ret = ESPhttpUpdate.update(client, "http://server/file.bin");
     // Or:

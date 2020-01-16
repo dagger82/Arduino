@@ -74,10 +74,7 @@ AVRISPState_t ESP8266AVRISP::update() {
             if (_server.hasClient()) {
                 _client = _server.available();
                 _client.setNoDelay(true);
-                ip_addr_t lip;
-                lip.addr = _client.remoteIP();
-                AVRISP_DEBUG("client connect %d.%d.%d.%d:%d", IP2STR(&lip), _client.remotePort());
-                (void) lip; // Avoid unused warning when not in debug mode
+                AVRISP_DEBUG("client connect %s:%d", _client.remoteIP().toString().c_str(), _client.remotePort());
                 _client.setTimeout(100); // for getch()
                 _state = AVRISP_STATE_PENDING;
                 _reject_incoming();
@@ -110,10 +107,9 @@ AVRISPState_t ESP8266AVRISP::serve() {
         case AVRISP_STATE_IDLE:
             // should not be called when idle, error?
             break;
-        case AVRISP_STATE_PENDING: {
+        case AVRISP_STATE_PENDING:
             _state = AVRISP_STATE_ACTIVE;
-        // fallthrough
-        }
+            // falls through
         case AVRISP_STATE_ACTIVE: {
             while (_client.available()) {
                 avrisp();

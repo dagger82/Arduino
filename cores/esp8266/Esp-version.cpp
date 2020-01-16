@@ -28,30 +28,41 @@
 #define STRHELPER(x) #x
 #define STR(x) STRHELPER(x) // stringifier
 
-static const char arduino_esp8266_git_ver [] PROGMEM = STR(ARDUINO_ESP8266_GIT_DESC);
-#if LWIP_VERSION_MAJOR != 1
-static const char lwip2_version [] PROGMEM = "/lwIP:" STR(LWIP_VERSION_MAJOR) "." STR(LWIP_VERSION_MINOR) "." STR(LWIP_VERSION_REVISION);
+static const char arduino_esp8266_git_ver [] PROGMEM = "/Core:" STR(ARDUINO_ESP8266_GIT_DESC) "=";
+#if LWIP_VERSION_MAJOR > 1
+#if LWIP_IPV6
+static const char lwip_version [] PROGMEM = "/lwIP:IPv6+" LWIP_HASH_STR;
+#else
+static const char lwip_version [] PROGMEM = "/lwIP:" LWIP_HASH_STR;
+#endif
 #endif
 static const char bearssl_version [] PROGMEM = "/BearSSL:" STR(BEARSSL_GIT);
 
-String EspClass::getFullVersion()
-{
-    return   String(F("SDK:")) + system_get_sdk_version()
-           + F("/Core:") + FPSTR(arduino_esp8266_git_ver)
+String EspClass::getFullVersion() {
+    String s(F("SDK:"));
+    s.reserve(127);
+
+    s += system_get_sdk_version();
+    s += FPSTR(arduino_esp8266_git_ver);
+    s += String(esp8266::coreVersionNumeric());
 #if LWIP_VERSION_MAJOR == 1
-           + F("/lwIP:") + String(LWIP_VERSION_MAJOR) + "." + String(LWIP_VERSION_MINOR) + "." + String(LWIP_VERSION_REVISION)
-#else
-           + FPSTR(lwip2_version)
-#endif
+    s += F("/lwIP:");
+    s += LWIP_VERSION_MAJOR;
+    s += '.';
+    s += LWIP_VERSION_MINOR;
+    s += '.';
+    s += LWIP_VERSION_REVISION;
 #if LWIP_VERSION_IS_DEVELOPMENT
-             + F("-dev")
+    s += F("-dev");
 #endif
 #if LWIP_VERSION_IS_RC
-             + F("rc") + String(LWIP_VERSION_RC)
+    s += F("rc");
+    s += String(LWIP_VERSION_RC);
 #endif
-#ifdef LWIP_HASH_STR
-             + "(" + F(LWIP_HASH_STR) + ")"
-#endif
-             + FPSTR(bearssl_version)
-           ;
+#else // LWIP_VERSION_MAJOR != 1
+    s += FPSTR(lwip_version);
+#endif // LWIP_VERSION_MAJOR != 1
+    s += FPSTR(bearssl_version);
+
+    return s;
 }

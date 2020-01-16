@@ -28,6 +28,7 @@
 #define HardwareSerial_h
 
 #include <inttypes.h>
+#include <../include/time.h> // See issue #6714
 #include "Stream.h"
 #include "uart.h"
 
@@ -72,22 +73,33 @@ public:
 
     void begin(unsigned long baud)
     {
-        begin(baud, SERIAL_8N1, SERIAL_FULL, 1);
+        begin(baud, SERIAL_8N1, SERIAL_FULL, 1, false);
     }
     void begin(unsigned long baud, SerialConfig config)
     {
-        begin(baud, config, SERIAL_FULL, 1);
+        begin(baud, config, SERIAL_FULL, 1, false);
     }
     void begin(unsigned long baud, SerialConfig config, SerialMode mode)
     {
-        begin(baud, config, mode, 1);
+        begin(baud, config, mode, 1, false);
     }
 
-    void begin(unsigned long baud, SerialConfig config, SerialMode mode, uint8_t tx_pin);
+    void begin(unsigned long baud, SerialConfig config, SerialMode mode, uint8_t tx_pin)
+    {
+        begin(baud, config, mode, tx_pin, false);
+    }
+
+    void begin(unsigned long baud, SerialConfig config, SerialMode mode, uint8_t tx_pin, bool invert);
 
     void end();
 
+    void updateBaudRate(unsigned long baud);
+
     size_t setRxBufferSize(size_t size);
+    size_t getRxBufferSize()
+    {
+        return uart_get_rx_buffer_size(_uart);
+    }
 
     void swap()
     {
@@ -120,13 +132,23 @@ public:
 
     int peek(void) override
     {
-        // this may return -1, but that's okay
+        // return -1 when data is unvailable (arduino api)
         return uart_peek_char(_uart);
     }
     int read(void) override
     {
-        // this may return -1, but that's okay
+        // return -1 when data is unvailable (arduino api)
         return uart_read_char(_uart);
+    }
+    // ::read(buffer, size): same as readBytes without timeout
+    size_t read(char* buffer, size_t size)
+    {
+        return uart_read(_uart, buffer, size);
+    }
+    size_t readBytes(char* buffer, size_t size) override;
+    size_t readBytes(uint8_t* buffer, size_t size) override
+    {
+        return readBytes((char*)buffer, size);
     }
     int availableForWrite(void)
     {
@@ -137,30 +159,11 @@ public:
     {
         return uart_write_char(_uart, c);
     }
-    inline size_t write(unsigned long n)
-    {
-        return write((uint8_t) n);
-    }
-    inline size_t write(long n)
-    {
-        return write((uint8_t) n);
-    }
-    inline size_t write(unsigned int n)
-    {
-        return write((uint8_t) n);
-    }
-    inline size_t write(int n)
-    {
-        return write((uint8_t) n);
-    }
-    size_t write(const uint8_t *buffer, size_t size)
+    size_t write(const uint8_t *buffer, size_t size) override
     {
         return uart_write(_uart, (const char*)buffer, size);
     }
-    size_t write(const char *buffer)
-    {
-        return buffer? uart_write(_uart, buffer, strlen(buffer)): 0;
-    }
+    using Print::write; // Import other write() methods to support things like write(0) properly
     operator bool() const
     {
         return _uart != 0;
@@ -182,6 +185,11 @@ public:
     bool hasOverrun(void)
     {
         return uart_has_overrun(_uart);
+    }
+
+    bool hasRxError(void)
+    {
+        return uart_has_rx_error(_uart);
     }
 
     void startDetectBaudrate();

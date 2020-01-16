@@ -46,7 +46,7 @@ protected:
   enum { _ndDefault, _ndFalse, _ndTrue } _noDelay = _ndDefault;
 
 public:
-  WiFiServer(IPAddress addr, uint16_t port);
+  WiFiServer(const IPAddress& addr, uint16_t port);
   WiFiServer(uint16_t port);
   virtual ~WiFiServer() {}
   WiFiClient available(uint8_t* status = NULL);
@@ -58,10 +58,12 @@ public:
   virtual size_t write(uint8_t);
   virtual size_t write(const uint8_t *buf, size_t size);
   uint8_t status();
+  uint16_t port() const;
   void close();
   void stop();
 
   using Print::write;
+  using ClientType = WiFiClient;
 
 protected:
   long _accept(tcp_pcb* newpcb, long err);
